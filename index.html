@@ -143,7 +143,7 @@ footer h4{margin:0 0 8px}
 <div class="top"><div class="wrap"><span>توصيل لجميع مناطق الكويت</span><span class="links"><a href="#">تتبع الطلب</a><a href="#">English</a></span></div></div>
 <header class="main"><div class="wrap">
 <a class="logo" href="#home"><img class="lgimg" alt="All-in-1"></a>
-<form class="search" onsubmit="event.preventDefault();toast('البحث غير مفعّل في هذا التصميم')"><input type="search" placeholder="ابحث عن خيمة، فحم، سترة نجاة..." aria-label="بحث"><button>بحث</button></form>
+<form class="search" onsubmit="event.preventDefault();doSearch()"><input id="q" type="search" placeholder="ابحث عن خيمة، فحم، سترة نجاة..." aria-label="بحث"><button>بحث</button></form>
 <div class="icons">
 <button class="ib" aria-label="المفضلة" onclick="location.hash='wishlist'"><b>♡</b><span>المفضلة</span><em class="badge" id="wc" hidden>0</em></button>
 <button class="ib" aria-label="الحساب" onclick="modal(1)"><b>👤</b><span>دخول</span></button>
@@ -189,7 +189,7 @@ footer h4{margin:0 0 8px}
 <div class="copy">© 2026 All-in-1. جميع الحقوق محفوظة. <a href="#admin" style="display:inline;margin-inline-start:12px">لوحة التحكم</a></div>
 </div></footer>
 
-<div class="modal" id="modal" onclick="if(event.target===this)modal(0)"><div class="mbox" role="dialog" aria-label="تسجيل الدخول"><h3>تسجيل الدخول</h3><p>سجّل لمتابعة طلباتك وحفظ مفضلتك.</p><button class="sso" onclick="toast('الدخول بحساب Google يُربط عند إنشاء المتجر الفعلي')">المتابعة بحساب Google</button><button class="sso" onclick="toast('الدخول بحساب Apple يُربط عند إنشاء المتجر الفعلي')">المتابعة بحساب Apple</button><div class="or">أو</div><input type="email" placeholder="البريد الإلكتروني" aria-label="البريد الإلكتروني"><button class="btn" onclick="toast('هذا تصميم فقط، لا يوجد تسجيل فعلي بعد')">متابعة</button></div></div>
+<div class="modal" id="modal" onclick="if(event.target===this)modal(0)"><div class="mbox" role="dialog" aria-label="تسجيل الدخول"><h3>تسجيل الدخول</h3><p>ستُفعَّل حسابات العملاء (بالبريد أو Google) في النسخة الحقيقية بعد ربط قاعدة البيانات. هذه نسخة تجريبية.</p><a class="btn" href="#admin" onclick="modal(0)" style="display:block;text-align:center">دخول المدير (لوحة التحكم)</a><button class="sso" style="margin-top:10px" onclick="modal(0)">إغلاق</button></div></div>
 <a class="wa" href="#" aria-label="واتساب">💬</a>
 <div class="shade" id="shade" onclick="drawer(0)"></div>
 <aside class="drawer" id="drawer" aria-label="السلة"><header>سلة التسوق<button onclick="drawer(0)" aria-label="إغلاق">✕</button></header><div id="items"></div><div class="tot"><div><span>الإجمالي</span><span id="total">0.000 د.ك</span></div><button class="btn" onclick="toast('إتمام الطلب يحتاج منصة متجر حقيقية')">إتمام الطلب</button></div></aside>
@@ -255,13 +255,15 @@ let all=PRODUCTS.map((_,i)=>i),dealIds=()=>all.filter(i=>PRODUCTS[i][2]).sort((a
 const list=a=>a.length?`<div class="grid">${a.map(card).join('')}</div>`:'<div class="empty">لا توجد منتجات في هذا القسم بعد. جرّب قسماً آخر.</div>';
 function route(){return (location.hash||'#home').slice(1)}
 function renderGrid(){
- const r=route(),h=$('home'),pg=$('page'),home=!r||r==='home'||!/^(all|new|deals|admin|wishlist|custom|product-\d+|cat-\d+)$/.test(r);
+ const r=route(),h=$('home'),pg=$('page'),home=!r||r==='home'||!/^(all|new|deals|admin|wishlist|custom|search|product-\d+|cat-\d+)$/.test(r);
  h.hidden=!home;pg.hidden=home;
  if(home){const d=dealIds(),mx=d.length?pct(PRODUCTS[d[0]]):0;$('hbig').innerHTML=mx?`خصم يصل إلى<b>${mx}%</b>`:'';$('hbig').hidden=!mx;$('hchips').innerHTML=d.slice(0,3).map(i=>{const p=PRODUCTS[i];return `<a class="hchip" href="#deals"><span>${p[3]}</span>${p[0]}<b>-${pct(p)}%</b></a>`}).join('');$('deals').innerHTML=d.slice(0,5).map(card).join('');$('grid').innerHTML=all.slice(-5).reverse().map(card).join('');return}
  const cr=t=>`<div class="crumb"><a href="#home">الرئيسية</a> / ${t}</div>`;let t,body;
  if(r==='all'){t='كل الأقسام';body='<div class="tiles">'+CATS.map((c,i)=>`<a class="tile" href="#cat-${i}"><i>${c[1]}</i>${c[0]}</a>`).join('')+'</div>'}
  else if(r==='new'){t='وصل حديثاً';body=list(all.slice().reverse())}
  else if(r==='deals'){t='العروض والخصومات';body=list(dealIds())}
+ else if(r==='search'){t='نتائج البحث';const k=nz(SQ),hit=k?all.filter(i=>{const p=PRODUCTS[i],c=CATS[p[5]];return nz(p[0]+' '+(p[9]||'')+' '+(c?c[0]:'')).includes(k)}):[],cs=k?CATS.map((c,i)=>[c,i]).filter(([c])=>nz(c[0]+' '+c[2].join(' ')).includes(k)):[];
+  body=k?`<p class="crumb" style="margin:0 0 12px">نتائج «${esc(SQ)}»: ${hit.length} منتج</p>`+(cs.length?`<div class="opts">${cs.map(([c,i])=>`<a class="chip" href="#cat-${i}">${c[1]} ${c[0]}</a>`).join('')}</div>`:'')+(hit.length?list(hit):'<div class="empty">لا توجد منتجات مطابقة. جرّب كلمة أخرى.</div>'):'<div class="empty">اكتب كلمة للبحث.</div>'}
  else if(r.startsWith('product-')){const n=+r.slice(8),p=PRODUCTS[n];if(!p){t='المنتج غير موجود';body='<div class="empty">هذا المنتج غير متاح.</div>'}else{t=p[0];body=pdp(n)}}
  else if(r==='wishlist'){t='المفضلة';body=wished.size?list([...wished]):'<div class="empty">لا توجد منتجات في المفضلة. اضغط على القلب في أي منتج لإضافته هنا.</div>'}
  else if(r==='custom'){t='صمّم منتجك';body='<div id="cst"></div>'}
@@ -396,6 +398,9 @@ ${p[9]?`<p>${p[9]}</p>`:''}
 <div class="qty" style="margin:14px 0"><span>الكمية</span><button onclick="pq(-1)" aria-label="إنقاص">−</button><b id="pqv">1</b><button onclick="pq(1)" aria-label="زيادة">+</button></div>
 <button class="btn" style="width:100%" onclick="add(${n},+$('pqv').textContent)">أضف للسلة</button>
 <button class="chip" style="margin-top:10px" onclick="wish(${n})">${wished.has(n)?'♥ في المفضلة':'♡ أضف للمفضلة'}</button></div></div>${rel.length?`<h2 class="sec">منتجات مشابهة</h2>${list(rel)}`:''}`}
+let SQ='';
+const nz=x=>String(x||'').toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').trim();
+function doSearch(){SQ=$('q').value;if(route()==='search')renderGrid();else location.hash='search'}
 addEventListener('hashchange',()=>{renderGrid();scrollTo(0,0)});renderGrid();renderCart();
 function modal(o){$('modal').classList.toggle('on',!!o)}
 </script>
